@@ -1,4 +1,11 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 const int LED_PIN = 4; // d4 pin
 const int BUTTON_PIN = 27; //d27 pin
@@ -12,10 +19,25 @@ bool isBreathing = true;
 int lastButtonState = HIGH;
 unsigned long lastDebounceTime = 0;
 
+void updateDisplay(bool active){
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(15, 24);
+  display.println(active ? "RESUMED" : "PAUSED");
+  display.display();
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)){
+    Serial.println("SSD1306 allocation fail, Check SDA(21)/SCL(22)");
+    for(;;);
+  }
+  updateDisplay(isBreathing);
 }
 
 void loop() {
@@ -31,6 +53,7 @@ void loop() {
     lastDebounceTime = now;
     isBreathing = !isBreathing;
     Serial.println(isBreathing ? "Resumed" : "Paused");
+    updateDisplay(isBreathing);
   }
   lastButtonState = reading;
   
